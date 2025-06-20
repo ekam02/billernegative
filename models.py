@@ -139,12 +139,13 @@ SELECT
     es.store_desc AS store_name,
     invoice.num_doc_fact_elec AS doc_num,
     invoice.c_origen AS doc_type,
+    es.jano_line AS line,
     es.biller_store_id AS store,
     invoice.nro_terminal AS pos,
     invoice.cod_prov AS trx,
     invoice.fec_fact::DATE AS billed_at,
     invoicee.f_envio_dian::DATE AS sent_at,
-    STRING_AGG(memo.num_doc_fact_elec, ', ') AS memos,
+    STRING_AGG(memo.num_doc_fact_elec, ', ') AS memo_lts,
     CASE
         WHEN invoice.c_origen IN (4, 9) THEN invoice.vt_factura::INT8 *-1
         ELSE invoice.vt_factura::INT8
@@ -184,6 +185,7 @@ GROUP BY
     es.store_desc,
     invoice.num_doc_fact_elec,
     invoice.c_origen,
+    es.jano_line,
     es.biller_store_id,
     invoice.nro_terminal,
     invoice.cod_prov,
