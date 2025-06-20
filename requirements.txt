@@ -4,7 +4,7 @@ python-dotenv==0.21.0
 openpyxl==3.1.5
 pytest==8.3.5
 sqlalchemy==2.0.35
-sqlmodel==0.0.23
+sqlmodel==0.0.24
 psycopg2-binary==2.9.10
 pyxlsb==1.0.10
 pydantic==2.11.1

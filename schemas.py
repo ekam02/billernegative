@@ -5,7 +5,6 @@ from sqlmodel import SQLModel
 
 
 class Document(SQLModel):
-    pass
     store_name: str
     doc_num: str
     doc_type: Optional[int] = None

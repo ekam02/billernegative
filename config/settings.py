@@ -66,7 +66,7 @@ class AppSettings:
             raise ValueError("Missing required environment variables")
 
         self.jano_engine = create_engine(
-            f"postgresql://{jano_user}:{jano_pass}@{jano_host}:{jano_port}/{jano_name}",
+            f"oracle+oracledb://{jano_user}:{jano_pass}@{jano_host}:{jano_port}/{jano_name}",
             pool_size=engine_pool_size, max_overflow=engine_max_overflow
         )
 
