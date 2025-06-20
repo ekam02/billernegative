@@ -7,11 +7,36 @@ from sqlalchemy.orm import Session
 
 from config import biller_engine, jano_engine, log_console_level, log_file_level
 from config.logger_config import setup_logger
-from models import BILLER_QUERY_NEGATIVE_INVOICES, JANO_QUERY_DOCUMENT_BY_ATTRIBUTES
+from models import BILLER_QUERY_MEMOS_BY_NUMBERS, BILLER_QUERY_NEGATIVE_INVOICES, JANO_QUERY_PARTNER_BY_ATTRIBUTES
 from schemas import Document
 
 
 logger = setup_logger(__name__, console_level=log_console_level, file_level=log_file_level)
+
+
+def find_biller_memos_by_numbers(
+        numbers: List[str],
+        clause: TextClause = BILLER_QUERY_MEMOS_BY_NUMBERS,
+        engine: Engine = biller_engine
+) -> Optional[List[Document]]:
+    try:
+        if not isinstance(numbers, list):
+            raise TypeError("It is expected that 'numbers' is of type 'list'.")
+        if not isinstance(numbers[0], str):
+            raise TypeError("It is expected that 'numbers' is of type 'list' of 'str'.")
+        if not isinstance(clause, TextClause):
+            raise TypeError("The 'clause' is expected to be of type 'TextClause' from SQLAlchemy.")
+        if not isinstance(engine, Engine):
+            raise TypeError("The 'engine' is expected to be of type 'Engine' from SQLAlchemy.")
+        with Session(engine) as session:
+            biller_memos = session.execute(clause, {"numbers": (*numbers,)}).all()
+            if biller_memos:
+                return [Document(**biller_memo._asdict()) for biller_memo in biller_memos]
+    except TypeError as e:
+        logger.exception(f"The types provided are not correct. {e}")
+    except Exception as e:
+        logger.exception(f"An error occurred while retrieving a Biller memos: {e}")
+    return None
 
 
 def create_documents(df: DataFrame) -> Optional[List[Document]]:
@@ -20,7 +45,12 @@ def create_documents(df: DataFrame) -> Optional[List[Document]]:
             raise TypeError("The 'df' is expected to be of type 'DataFrame' from Pandas.")
         if df.empty:
             raise ValueError("The 'df' is empty.")
-        return [Document(**row.to_dict()) for _, row in df.iterrows()]
+        documents = []
+        for _, row in df.iterrows():
+            document = Document(**row.to_dict())
+            document.memos = find_biller_memos_by_numbers(row["memo_lts"].split("|"))
+            documents.append(document)
+        return documents
     except TypeError as e:
         logger.exception(f"The types provided are not correct. {e}")
     except ValueError as e:
@@ -30,10 +60,10 @@ def create_documents(df: DataFrame) -> Optional[List[Document]]:
     return None
 
 
-def find_jano_document_by_attributes(
+def find_jano_partner_by_attributes(
         line: int, store: int, pos: int, trx: int,
         billed_at: date,
-        clause: TextClause = JANO_QUERY_DOCUMENT_BY_ATTRIBUTES,
+        clause: TextClause = JANO_QUERY_PARTNER_BY_ATTRIBUTES,
         engine: Engine = jano_engine
 ) -> Optional[Document]:
     try:
@@ -50,9 +80,9 @@ def find_jano_document_by_attributes(
             "end_date": billed_at + timedelta(days=1)
         }
         with Session(engine) as session:
-            jano_documents = session.execute(clause, params).first()
-            if jano_documents:
-                return Document(**jano_documents.first()._asdict())
+            jano_partner = session.execute(clause, params).first()
+            if jano_partner:
+                return Document(**jano_partner._asdict())
     except Exception as e:
         logger.exception(f"An error occurred while retrieving a Jano document: {e}")
     return None

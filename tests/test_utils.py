@@ -2,7 +2,7 @@ from datetime import date
 
 from pandas import DataFrame
 
-from utils import create_documents, find_jano_document_by_attributes, read_negative_invoices
+from utils import create_documents, find_biller_memos_by_numbers, find_jano_partner_by_attributes, read_negative_invoices
 from schemas import Document
 
 
@@ -20,12 +20,30 @@ class TestUtils:
         else:
             assert False
 
-    def test_find_jano_document_by_attributes(self):
-        jano_document = find_jano_document_by_attributes(
+    def test_find_jano_partner_by_attributes(self):
+        jano_partner = find_jano_partner_by_attributes(
             line=2, store=3814, pos=17, trx=7294,
             billed_at=date(2025, 6, 7)
         )
-        assert isinstance(jano_document, Document)
+        if not jano_partner:
+            assert isinstance(jano_partner, Document)
+        else:
+            assert False
+
+    def test_find_biller_memos_by_numbers(self):
+        biller_memos = find_biller_memos_by_numbers(numbers=["VCJD2027339"])
+        if biller_memos:
+            assert isinstance(biller_memos, list)
+            assert isinstance(biller_memos[0], Document)
+        else:
+            assert False
+
+        biller_memos = find_biller_memos_by_numbers(numbers=["VCSU1046072", "VCJ82014804"])
+        if biller_memos:
+            assert isinstance(biller_memos, list)
+            assert isinstance(biller_memos[0], Document)
+        else:
+            assert False
 
     def test_validate_document(self):
         pass
