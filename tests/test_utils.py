@@ -3,7 +3,8 @@ from datetime import date
 from pandas import DataFrame
 
 from utils import create_document, create_documents, find_biller_memos_by_numbers, find_biller_replace_by_attributes, \
-    find_jano_partner_by_attributes, read_negative_invoices
+    find_biller_replaces_from_documents, find_biller_replace_by_document, find_jano_partner_by_attributes, \
+    read_negative_invoices
 from schemas import Document
 
 
@@ -44,6 +45,85 @@ class TestFinder:
         )
         if biller_replace:
             assert isinstance(biller_replace, Document)
+        else:
+            assert False
+
+    def test_find_biller_replace_by_document(self):
+        biller_replace = find_biller_replace_by_document(
+            Document(
+                store_name="JUMBO CARRERA 30 (16)",
+                doc_num="VCSU1046274",
+                doc_type=9,
+                line=1,
+                store=16,
+                pos=17,
+                trx=530,
+                billed_at=date(2025, 6, 12),
+                sent_at=date(2025, 6, 12),
+                amount=-189552,
+                customer=900965992,
+                duplicated=None,
+                status="OK",
+                log_dian="",
+                uuid="151371",
+                memos=None,
+                pair_up=None,
+                replaces=None,
+                evaluation="",
+            )
+        )
+        assert isinstance(biller_replace, Document)
+
+    def test_find_biller_replaces_from_documents(self):
+        biller_replaces = find_biller_replaces_from_documents(
+            [
+                Document(
+                    store_name="JUMBO CARRERA 30 (16)",
+                    doc_num="VCSU1046274",
+                    doc_type=9,
+                    line=1,
+                    store=16,
+                    pos=17,
+                    trx=530,
+                    billed_at=date(2025, 6, 12),
+                    sent_at=date(2025, 6, 12),
+                    amount=-189552,
+                    customer=900965992,
+                    duplicated=None,
+                    status="OK",
+                    log_dian="",
+                    uuid="336831",
+                    memos=None,
+                    pair_up=None,
+                    replaces=None,
+                    evaluation="",
+                ),
+                Document(
+                    store_name="JUMBO CARRERA 30 (16)",
+                    doc_num="VCJ42011654",
+                    doc_type=9,
+                    line=1,
+                    store=16,
+                    pos=40,
+                    trx=9310,
+                    billed_at=date(2025, 6, 3),
+                    sent_at=date(2025, 6, 3),
+                    amount=-24830,
+                    customer=900965992,
+                    duplicated=None,
+                    status="OK",
+                    log_dian="",
+                    uuid="fb4ad0",
+                    memos=None,
+                    pair_up=None,
+                    replaces=None,
+                    evaluation="",
+                ),
+            ]
+        )
+        if biller_replaces:
+            assert isinstance(biller_replaces, list)
+            assert isinstance(biller_replaces[0], Document)
         else:
             assert False
 

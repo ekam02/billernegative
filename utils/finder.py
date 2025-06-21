@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 from typing import List, Optional
 
@@ -82,6 +83,43 @@ def find_biller_replace_by_attributes(
             return biller_replace
     except Exception as e:
         logger.exception(f"An error occurred while retrieving a Biller replace: {e}")
+    return None
+
+
+def find_biller_replace_by_document(document: Document) -> Optional[Document]:
+    try:
+        if not isinstance(document, Document):
+            raise TypeError("The 'document' is expected to be of type 'Document' from models.")
+        biller_replace = find_biller_replace_by_attributes(
+            line=document.line, store=document.store, pos=document.pos, trx=document.trx,
+            billed_at=document.billed_at
+        )
+        if biller_replace:
+            return biller_replace
+    except TypeError as e:
+        logger.exception(f"The types provided are not correct. {e}")
+    except Exception as e:
+        logger.exception(f"An error occurred while retrieving a Biller replace: {e}")
+    return None
+
+
+def find_biller_replaces_from_documents(documents: List[Document]) -> Optional[List[Document]]:
+    try:
+        if not isinstance(documents, list):
+            raise TypeError("It is expected that 'documents' is of type 'list'.")
+        if not isinstance(documents[0], Document):
+            raise TypeError("It is expected that 'documents' is of type 'list' of 'Document'.")
+        documents = [document for document in documents if document.doc_num.startswith("VCSU")]
+        if documents:
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [executor.submit(find_biller_replace_by_document, document) for document in documents]
+
+            documents = [future.result() for future in as_completed(futures)]
+            return documents
+    except TypeError as e:
+        logger.exception(f"The types provided are not correct. {e}")
+    except Exception as e:
+        logger.exception(f"An error occurred while retrieving a Biller replaces: {e}")
     return None
 
 
