@@ -2,7 +2,8 @@ from datetime import date
 
 from pandas import DataFrame
 
-from utils import create_document, create_documents, find_biller_memos_by_numbers, find_jano_partner_by_attributes, read_negative_invoices
+from utils import create_document, create_documents, find_biller_memos_by_numbers, find_biller_replace_by_attributes, \
+    find_jano_partner_by_attributes, read_negative_invoices
 from schemas import Document
 
 
@@ -33,6 +34,16 @@ class TestFinder:
         if biller_memos:
             assert isinstance(biller_memos, list)
             assert isinstance(biller_memos[0], Document)
+        else:
+            assert False
+
+    def test_find_biller_replace_by_attributes(self):
+        biller_replace = find_biller_replace_by_attributes(
+            line=1, store=23, pos=17, trx=9726,
+            billed_at=date(2025, 5, 27)
+        )
+        if biller_replace:
+            assert isinstance(biller_replace, Document)
         else:
             assert False
 

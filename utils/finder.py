@@ -7,11 +7,41 @@ from sqlalchemy.orm import Session
 
 from config import biller_engine, jano_engine, log_console_level, log_file_level
 from config.logger_config import setup_logger
-from models import BILLER_QUERY_MEMOS_BY_NUMBERS, BILLER_QUERY_NEGATIVE_INVOICES, JANO_QUERY_PARTNER_BY_ATTRIBUTES
+from models import BILLER_QUERY_MEMOS_BY_NUMBERS, BILLER_QUERY_NEGATIVE_INVOICES, BILLER_QUERY_REPLACE_BY_ATTRIBUTES, \
+    JANO_QUERY_PARTNER_BY_ATTRIBUTES
 from schemas import Document
 
 
 logger = setup_logger(__name__, console_level=log_console_level, file_level=log_file_level)
+
+
+def _find_document_by_attributes(
+        line: int, store: int, pos: int, trx: int, billed_at: date,
+        clause: TextClause,
+        engine: Engine
+) -> Optional[Document]:
+    try:
+        if not isinstance(line, int) or not isinstance(store, int) or not isinstance(pos, int) or not isinstance(trx, int):
+            raise TypeError("It is expected that 'line', 'store', 'pos' and 'trx' are of type 'int'.")
+        if not isinstance(billed_at, date):
+            raise TypeError("It is expected that 'billed_at' is of type 'date'.")
+        if not isinstance(clause, TextClause):
+            raise TypeError("The 'clause' is expected to be of type 'TextClause' from SQLAlchemy.")
+        if not isinstance(engine, Engine):
+            raise TypeError("The 'engine' is expected to be of type 'Engine' from SQLAlchemy.")
+        params = {
+            "line": line, "store": store, "pos": pos, "trx": trx, "start_date": billed_at - timedelta(days=1),
+            "end_date": billed_at + timedelta(days=1)
+        }
+        with Session(engine) as session:
+            document = session.execute(clause, params).first()
+            if document:
+                return Document(**document._asdict())
+    except TypeError as e:
+        logger.exception(f"The types provided are not correct. {e}")
+    except Exception as e:
+        logger.exception(f"An error occurred while retrieving a document: {e}")
+    return None
 
 
 def find_biller_memos_by_numbers(
@@ -39,6 +69,22 @@ def find_biller_memos_by_numbers(
     return None
 
 
+def find_biller_replace_by_attributes(
+        line: int, store: int, pos: int, trx: int, billed_at: date,
+        clause: TextClause = BILLER_QUERY_REPLACE_BY_ATTRIBUTES,
+        engine: Engine = biller_engine
+) -> Optional[Document]:
+    try:
+        biller_replace = _find_document_by_attributes(
+            line=line, store=store, pos=pos, trx=trx, billed_at=billed_at, clause=clause, engine=engine
+        )
+        if biller_replace:
+            return biller_replace
+    except Exception as e:
+        logger.exception(f"An error occurred while retrieving a Biller replace: {e}")
+    return None
+
+
 def find_jano_partner_by_attributes(
         line: int, store: int, pos: int, trx: int,
         billed_at: date,
@@ -46,22 +92,11 @@ def find_jano_partner_by_attributes(
         engine: Engine = jano_engine
 ) -> Optional[Document]:
     try:
-        if not isinstance(line, int) or not isinstance(store, int) or not isinstance(pos, int) or not isinstance(trx, int):
-            raise TypeError("It is expected that 'line', 'store', 'pos' and 'trx' are of type 'int'.")
-        if not isinstance(billed_at, date):
-            raise TypeError("It is expected that 'billed_at' is of type 'date'.")
-        if not isinstance(clause, TextClause):
-            raise TypeError("The 'clause' is expected to be of type 'TextClause' from SQLAlchemy.")
-        if not isinstance(engine, Engine):
-            raise TypeError("The 'engine' is expected to be of type 'Engine' from SQLAlchemy.")
-        params = {
-            "line": line, "store": store, "pos": pos, "trx": trx, "start_date": billed_at - timedelta(days=1),
-            "end_date": billed_at + timedelta(days=1)
-        }
-        with Session(engine) as session:
-            jano_partner = session.execute(clause, params).first()
-            if jano_partner:
-                return Document(**jano_partner._asdict())
+        jano_partner = _find_document_by_attributes(
+            line=line, store=store, pos=pos, trx=trx, billed_at=billed_at, clause=clause, engine=engine
+        )
+        if jano_partner:
+            return jano_partner
     except Exception as e:
         logger.exception(f"An error occurred while retrieving a Jano document: {e}")
     return None
