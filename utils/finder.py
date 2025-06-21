@@ -114,8 +114,8 @@ def find_biller_replaces_from_documents(documents: List[Document]) -> Optional[L
             with ThreadPoolExecutor(max_workers=5) as executor:
                 futures = [executor.submit(find_biller_replace_by_document, document) for document in documents]
 
-            documents = [future.result() for future in as_completed(futures)]
-            return documents
+            documents = set([future.result() for future in as_completed(futures)])
+            return list(documents)
     except TypeError as e:
         logger.exception(f"The types provided are not correct. {e}")
     except Exception as e:

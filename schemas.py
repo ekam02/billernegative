@@ -22,7 +22,7 @@ class Document(SQLModel):
     uuid: Optional[str] = None
     memos: Optional[List["Document"]] = None
     partner: Optional["Document"] = None
-    replaces: Optional[Set["Document"]] = None
+    replaces: Optional[List["Document"]] = None
     evaluation: str = ""
 
     def get_memo_doc_nums(self) -> Optional[List[str]]:
@@ -33,7 +33,7 @@ class Document(SQLModel):
     def get_replace_doc_nums(self) -> Optional[List[str]]:
         if not self.replaces:
             return None
-        return [replace.doc_num for replace in list(self.replaces)]
+        return [replace.doc_num for replace in self.replaces]
 
     def get_memo_total_amount(self) -> int:
         if not self.memos:
@@ -43,7 +43,7 @@ class Document(SQLModel):
     def get_replace_total_amount(self) -> int:
         if not self.replaces:
             return 0
-        return sum([replace.amount for replace in list(self.replaces)])
+        return sum([replace.amount for replace in self.replaces])
 
     def get_amount_difference_with_memos(self) -> int:
         return self.amount - abs(self.get_memo_total_amount())

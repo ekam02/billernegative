@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pandas import DataFrame, Series
 
-from .finder import find_biller_memos_by_numbers, find_jano_partner_by_attributes
+from .finder import find_biller_memos_by_numbers, find_biller_replaces_from_documents, find_jano_partner_by_attributes
 from config import log_console_level, log_file_level
 from config.logger_config import setup_logger
 from schemas import Document
@@ -23,6 +23,7 @@ def create_document(row: Series) -> Optional[Document]:
         document.partner = find_jano_partner_by_attributes(
             document.line, document.store, document.pos, document.trx, document.billed_at,
         )
+        document.replaces = find_biller_replaces_from_documents(document.memos) if document.memos else None
         # logger.info(f"Document created successfully: {document}")
         return document
     except Exception as e:
