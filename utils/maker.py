@@ -49,3 +49,45 @@ def create_documents(df: DataFrame) -> Optional[List[Document]]:
     except Exception as e:
         logger.exception(f"An error occurred while creating documents: {e}")
     return None
+
+
+def validate_document(document: Document) -> Optional[str]:
+    try:
+        if not isinstance(document, Document):
+            raise TypeError("The 'document' is expected to be of type 'Document' from models.")
+        if document.partner:
+            if document.doc_num != document.partner.doc_num:
+                return "Error Prefijo Factura"
+            elif document.doc_num == document.partner.doc_num:  # Números de facturas iguales
+                # Si el sub_total es >= 0, entonces "OK"
+                if document.get_amount_difference_with_memos() >= 0:
+                    return "OK"
+                else:  # Si el sub_total es < 0, entonces:
+                    # Si en el juego de documentos hay remplazos, entonces:
+                    if document.replaces:
+                        # El total entre el `sub_total` y el `valor_remplazo` es >= 0, entonces "Remplazo OK":
+                        if document.get_total_amount_with_replaces() >= 0:
+                            return "Remplazo OK"
+                        else:  # El total entre el `sub_total` y el `valor_remplazo` es < 0, entonces "Error Remplazo":
+                            return "Error Remplazo"
+                    else:  # Si en el juego de documentos no hay remplazos, entonces:
+                        return "Error POS"
+        else:
+            return "Sin Factura En Jano"
+    except Exception as e:
+        logger.exception(f"An error occurred while validating a document: {e}")
+    return None
+
+
+def validate_documents(documents: List[Document]) -> Optional[List[Document]]:
+    try:
+        if not isinstance(documents, list):
+            raise TypeError("It is expected that 'documents' is of type 'list'.")
+        if not isinstance(documents[0], Document):
+            raise TypeError("It is expected that 'documents' is of type 'list' of 'Document'.")
+        for document in documents:
+            document.evaluation = validate_document(document)
+        return documents
+    except Exception as e:
+        logger.exception(f"An error occurred while validating documents: {e}")
+    return None

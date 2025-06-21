@@ -4,7 +4,7 @@ from pandas import DataFrame
 
 from utils import create_document, create_documents, find_biller_memos_by_numbers, find_biller_replace_by_attributes, \
     find_biller_replaces_from_documents, find_biller_replace_by_document, find_jano_partner_by_attributes, \
-    read_negative_invoices
+    read_negative_invoices, validate_document, validate_documents
 from schemas import Document
 
 
@@ -18,7 +18,7 @@ class TestFinder:
             line=2, store=3814, pos=17, trx=7294,
             billed_at=date(2025, 6, 7)
         )
-        if not jano_partner:
+        if jano_partner:
             assert isinstance(jano_partner, Document)
         else:
             assert False
@@ -127,22 +127,13 @@ class TestFinder:
         else:
             assert False
 
-    def test_validate_document(self):
-        pass
-
-    def test_validate_documents(self):
-        pass
-
-    def test_create_report(self):
-        pass
-
 
 class TestMaker:
     def test_create_document(self):
         negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
-        documents = create_document(row=negative_invoices.iloc[0])
-        if documents:
-            assert isinstance(documents, Document)
+        document = create_document(row=negative_invoices.iloc[0])
+        if document:
+            assert isinstance(document, Document)
         else:
             assert False
 
@@ -154,3 +145,25 @@ class TestMaker:
             assert isinstance(documents[0], Document)
         else:
             assert False
+
+    def test_validate_document(self):
+        negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
+        document = create_document(row=negative_invoices.iloc[0])
+        validate = validate_document(document)
+        if validate:
+            assert isinstance(validate, str)
+        else:
+            assert False
+
+    def test_validate_documents(self):
+        negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
+        documents = create_documents(df=negative_invoices)
+        documents = validate_documents(documents)
+        if documents:
+            assert isinstance(documents, list)
+            assert isinstance(documents[0], Document)
+        else:
+            assert False
+
+    def test_create_report(self):
+        pass
