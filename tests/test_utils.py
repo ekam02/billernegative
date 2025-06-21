@@ -2,23 +2,14 @@ from datetime import date
 
 from pandas import DataFrame
 
-from utils import create_documents, find_biller_memos_by_numbers, find_jano_partner_by_attributes, read_negative_invoices
+from utils import create_document, create_documents, find_biller_memos_by_numbers, find_jano_partner_by_attributes, read_negative_invoices
 from schemas import Document
 
 
-class TestUtils:
+class TestFinder:
     def test_read_negative_invoices(self):
         negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
         assert isinstance(negative_invoices, DataFrame)
-
-    def test_create_documents(self):
-        negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
-        documents = create_documents(df=negative_invoices)
-        if documents:
-            assert isinstance(documents, list)
-            assert isinstance(documents[0], Document)
-        else:
-            assert False
 
     def test_find_jano_partner_by_attributes(self):
         jano_partner = find_jano_partner_by_attributes(
@@ -53,3 +44,22 @@ class TestUtils:
 
     def test_create_report(self):
         pass
+
+
+class TestMaker:
+    def test_create_document(self):
+        negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
+        documents = create_document(row=negative_invoices.iloc[0])
+        if documents:
+            assert isinstance(documents, Document)
+        else:
+            assert False
+
+    def test_create_documents(self):
+        negative_invoices = read_negative_invoices(start_date=date(2025, 6, 1), end_date=date(2025, 6, 15))
+        documents = create_documents(df=negative_invoices)
+        if documents:
+            assert isinstance(documents, list)
+            assert isinstance(documents[0], Document)
+        else:
+            assert False

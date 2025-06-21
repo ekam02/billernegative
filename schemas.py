@@ -21,7 +21,7 @@ class Document(SQLModel):
     log_dian: Optional[str] = None
     uuid: Optional[str] = None
     memos: Optional[List["Document"]] = None
-    pair_up: Optional["Document"] = None
+    partner: Optional["Document"] = None
     replaces: Optional[Set["Document"]] = None
     evaluation: str = ""
 

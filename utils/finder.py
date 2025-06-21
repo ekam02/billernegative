@@ -39,27 +39,6 @@ def find_biller_memos_by_numbers(
     return None
 
 
-def create_documents(df: DataFrame) -> Optional[List[Document]]:
-    try:
-        if not isinstance(df, DataFrame):
-            raise TypeError("The 'df' is expected to be of type 'DataFrame' from Pandas.")
-        if df.empty:
-            raise ValueError("The 'df' is empty.")
-        documents = []
-        for _, row in df.iterrows():
-            document = Document(**row.to_dict())
-            document.memos = find_biller_memos_by_numbers(row["memo_lts"].split("|"))
-            documents.append(document)
-        return documents
-    except TypeError as e:
-        logger.exception(f"The types provided are not correct. {e}")
-    except ValueError as e:
-        logger.exception(f"An error occurred while creating documents: {e}")
-    except Exception as e:
-        logger.exception(f"An error occurred while creating documents: {e}")
-    return None
-
-
 def find_jano_partner_by_attributes(
         line: int, store: int, pos: int, trx: int,
         billed_at: date,
