@@ -1,3 +1,4 @@
+from datetime import date
 import os
 from pathlib import Path
 import tomllib
@@ -11,6 +12,14 @@ from .logger_config import setup_logger
 
 class AppSettings:
     _instance = None
+
+    @classmethod
+    def set_start_date(cls, start_date: date):
+        cls.start_date = start_date
+
+    @classmethod
+    def set_end_date(cls, end_date: date):
+        cls.end_date = end_date
 
     def __new__(cls):
         if cls._instance is None:
@@ -32,10 +41,17 @@ class AppSettings:
         with self.cfg_file.open("rb") as f:
             cfg = tomllib.load(f)
 
+        self.end_date = cfg.get("end_date")
+        self.headers = cfg.get("headers")
         self.log_console_level = cfg.get("log_console_level", 20)
         self.log_file_level = cfg.get("log_file_level", 30)
         engine_pool_size = cfg.get("engine_pool_size", 5)
         engine_max_overflow = cfg.get("engine_max_overflow", 10)
+        self.output_dir = self.repository / cfg.get("output_dir", "output")
+        if not self.output_dir.exists():
+            self.output_dir.mkdir(parents=True)
+        self.report_name = cfg.get("report_name")
+        self.start_date = cfg.get("start_date")
 
         logger = setup_logger(__name__, console_level=self.log_console_level, file_level=self.log_file_level)
         logger.debug("Loading config settings")
