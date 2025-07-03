@@ -93,23 +93,32 @@ def validate_document(document: Document) -> Optional[str]:
     try:
         if not isinstance(document, Document):
             raise TypeError("The 'document' is expected to be of type 'Document' from models.")
+        # Evalúa si el documento tiene pareja en Jano.
         if document.partner:
-            if document.doc_num != document.partner.doc_num:
-                return "Error Prefijo Factura"
-            elif document.doc_num == document.partner.doc_num:  # Números de facturas iguales
-                # Si el sub_total es >= 0, entonces "OK"
-                if document.get_amount_difference_with_memos() >= 0:
+            # Evalúa si el número del documento es igual al número de la pajera en Jano.
+            if document.doc_num == document.partner.doc_num:  # Números de facturas iguales
+                # Evalúa si alguna de las fechas de sus notas es más antigua a la fecha del documento
+                if any([memo.billed_at < document.billed_at for memo in document.memos]):
+                    return "Error En Relación Factura-Nota(s)"
+                # Evalúa si `sub_total >= 0`
+                elif document.get_amount_difference_with_memos() >= 0:
                     return "OK"
-                else:  # Si el sub_total es < 0, entonces:
-                    # Si en el juego de documentos hay remplazos, entonces:
+                else:
+                    # Como `sub_total < 0`; evalúa si existen remplazos
                     if document.replaces:
-                        # El total entre el `sub_total` y el `valor_remplazo` es >= 0, entonces "Remplazo OK":
+                        # Evalúa si el `total >= 0`. `total` es la suma de `sub_total` y `valor_remplazo`.
                         if document.get_total_amount_with_replaces() >= 0:
                             return "Remplazo OK"
-                        else:  # El total entre el `sub_total` y el `valor_remplazo` es < 0, entonces "Error Remplazo":
+                        # Como `total < 0`
+                        else:
                             return "Error Remplazo"
-                    else:  # Si en el juego de documentos no hay remplazos, entonces:
+                    # Cómo no hay remplazos
+                    else:
                         return "Error POS"
+            # Como los números son diferentes entre el documento y su pareja.
+            else:
+                return "Error Prefijo Factura"
+        # Como no tiene pareja en Jano
         else:
             return "Sin Factura En Jano"
     except Exception as e:
